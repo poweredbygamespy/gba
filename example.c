@@ -7,7 +7,7 @@ const int ysz = 160;
 #define FRAME_SEL_BIT		0x10
 #define BG2_ENABLE			0x400
 
-int main(void) {
+int AgbMain(void) {
 	*(unsigned int*)0x04000000 = 0x0403;
 
 	((unsigned short*)0x06000000)[120+80*240] = 0x001F;
