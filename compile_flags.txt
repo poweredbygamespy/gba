@@ -1,0 +1,6 @@
+-Wall
+-Wextra
+-mcpu=arm7tdmi
+-ffreestanding
+-ggdb3
+-Iinclude
