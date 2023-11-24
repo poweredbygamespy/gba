@@ -1,4 +1,7 @@
-.text
+.section .iwram, "ax"
+
+.section .text
+
 .global _start
 .align
 .arm
@@ -54,7 +57,7 @@ rom_header_end:
 	b start_vector	@ This branch must be here for proper
 					@ positioning of the following header.
 					@ DO NOT REMOVE IT.
-	
+
 .global __boot_method, __slave_number
 __boot_method:
 	.byte 0x00		@ boot method (0=ROM boot, 3=Multiplay boot)
@@ -71,9 +74,10 @@ __slave_number:
 	.byte 0x00
 	.byte 0x00
 
-.global start_vector
 .align
 .arm
+.global start_vector
+.type start_vector, %function
 start_vector:
 	mov r0, #0x12			@ Switch to IRQ mode
 	msr cpsr, r0
@@ -92,68 +96,62 @@ WRAMSetup:
 	mov r1, #0x40
 	lsl r1, #12			@ r1 = 0x40000
 	lsl r0, r1, #7		@ r0 = 0x2000000
-	bl ClearMem
+	bl  memclr_align
 
 	@ Clear Internal WRAM to 0x00
 	mov r0, #3
 	lsl r0, #24			@ r0 = 0x3000000
 	ldr r1, =__sp_usr_offset - 16
-	bl ClearMem
+	bl  memclr_align
 
 	@ Copy initialized data (data section) from LMA to VMA
 	ldr r0, =__data_lma
 	ldr r1, =__data_start
 	ldr r2, =__data_end
 	sub r2, r2, r1
-	bl CopyMem
+	bl  memcpy_align
 
 	@ Copy internal work ram (iwram section) from LMA to VMA
 	ldr r0, =__iwram_lma
 	ldr r1, =__iwram_start
 	ldr r2, =__iwram_end
 	sub r2, r2, r1
-	bl CopyMem
+	bl  memcpy_align
 
 	@ Copy internal work ram overlay 0 (iwram0 section) from LMA to VMA
 	ldr r0, =__load_start_iwram0
 	ldr r1, =__iwram_overlay_start
 	ldr r2, =__load_stop_iwram0
 	sub r2, r2, r0
-	bl CopyMem
+	bl  memcpy_align
 
 	@ Copy external work ram (ewram section) from LMA to VMA
 	ldr r0, =__ewram_lma
 	ldr r1, =__ewram_start
 	ldr r2, =__ewram_end
 	sub r2, r2, r1
-	bl CopyMem
+	bl  memcpy_align
 
 	@ Copy external work ram overlay 0 (ewram0 section) from LMA to VMA
 	ldr r0, =__load_start_ewram0
 	ldr r1, =__ewram_overlay_start
 	ldr r2, =__load_stop_ewram0
 	sub r2, r2, r0
-	bl CopyMem
-
-	ldr r0, =start_user
-	bx r0
+	bl  memcpy_align
 
 .align
-.pool
-
-.align
-.arm
+.thumb
+.global start_user
+.type start_user, %function
 start_user:
 	@ Jump to user code
-	mov r0, #0x10		@ Set to user mode
-	msr cpsr, r0
-
 	mov r0, #0			@ int argc
 	mov r1, #0			@ char *argv[]
 
 	ldr r3, =start_vector
 	mov lr, r3			@ Set start_vector as return address
 
+	ldr r3, =start_user	@ Test
 	ldr r3, =main
 	bx r3
 
@@ -161,41 +159,51 @@ start_user:
 
 .align
 .thumb
-@ Clear memory to 0x00 if length != 0
-@ r0 = Start Address
-@ r1 = Length
-ClearMem:
+.type memclr_align, %function
+memclr_align:
 	mov r2, #3			@ These commands are used in cases where
 	add r1, r2			@ the length is not a multiple of 4,
 	bic r1, r2			@ even though it should be.
 
-	beq ClearMemExit	@ Length is zero so exit
+@ Clear memory to 0x00 if length != 0
+@ r0 = Start Address
+@ r1 = Length
+.global memclr
+.type memclr, %function
+memclr:
+	cmp r1, #0
+	beq memclrExit		@ Length is zero so exit
 	mov r2, #0
-ClearMemLoop:
+memclrLoop:
 	stmia r0!, {r2}
 	sub r1, #4
-	bne ClearMemLoop
-ClearMemExit:
+	bne memclrLoop
+memclrExit:
 	bx lr
 
 .align
 .thumb
-@ Copy memory if length != 0
-@ r0 = Source Address
-@ r1 = Dest Address
-@ r2 = Length
-CopyMem:
+.type memcpy_align, %function
+memcpy_align:
 	mov r3, #3			@ These commands are used in cases where
 	add r2, r3			@ the length is not a multiple of 4,
 	bic r2, r3			@ even though it should be.
 
-	beq CopyMemExit		@ Length is zero so exit
-CopyMemLoop:
+@ Copy memory if length != 0
+@ r0 = Source Address
+@ r1 = Dest Address
+@ r2 = Length
+.global memcpy
+.type memcpy, %function
+memcpy:
+	cmp r2, #0
+	beq memcpyExit		@ Length is zero so exit
+memcpyLoop:
 	ldmia r0!, {r3}
 	stmia r1!, {r3}
 	sub r2, #4
-	bne CopyMemLoop
-CopyMemExit:
+	bne memcpyLoop
+memcpyExit:
 	bx lr
 
 .align
