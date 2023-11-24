@@ -2,7 +2,7 @@
 BUILD_DIR = build
 NAME = playground
 
-SRC = example.c crt0.S
+SRC = example.c crt0.S malloc.c
 
 SRC_C = $(filter %.c, $(SRC))
 SRC_S = $(filter %.S, $(SRC))
