@@ -76,121 +76,129 @@ __slave_number:
 .arm
 start_vector:
 	mov r0, #0x12			@ Switch to IRQ mode
-	msr	cpsr, r0
-	ldr	sp, =__sp_irq		@ Set SP_irq
-	mov	r0, #0x1f			@ Switch to system mode
-	msr	cpsr, r0
-	ldr	sp, =__sp_usr		@ Set SP_usr
+	msr cpsr, r0
+	ldr sp, =__sp_irq		@ Set SP_irq
+	mov r0, #0x1f			@ Switch to system mode
+	msr cpsr, r0
+	ldr sp, =__sp_usr		@ Set SP_usr
 
 	add r0, pc, #1			@ Enter THUMB mode
 	bx r0
 
+.align
 .thumb
-DoEWRAMClear:
+WRAMSetup:
 	@ Clear External WRAM to 0x00
-	mov	r1, #0x40
-	lsl	r1, #12			@ r1 = 0x40000
-	lsl	r0, r1, #7		@ r0 = 0x2000000
+	mov r1, #0x40
+	lsl r1, #12			@ r1 = 0x40000
+	lsl r0, r1, #7		@ r0 = 0x2000000
 	bl ClearMem
 
 	@ Clear Internal WRAM to 0x00
-	mov	r0, #3
-	lsl	r0, #24			@ r0 = 0x3000000
-	ldr	r1, =__sp_usr_offset - 16
+	mov r0, #3
+	lsl r0, #24			@ r0 = 0x3000000
+	ldr r1, =__sp_usr_offset - 16
 	bl ClearMem
 
 	@ Copy initialized data (data section) from LMA to VMA
-	ldr	r1, =__data_lma
-	ldr	r2, =__data_start
-	ldr	r4, =__data_end
-	bl CopyMemChk
+	ldr r1, =__data_lma
+	ldr r2, =__data_start
+	ldr r3, =__data_end
+	sub r3, r3, r2
+	bl CopyMem
 
 	@ Copy internal work ram (iwram section) from LMA to VMA
-	ldr	r1, =__iwram_lma
-	ldr	r2, =__iwram_start
-	ldr	r4, =__iwram_end
-	bl CopyMemChk
+	ldr r1, =__iwram_lma
+	ldr r2, =__iwram_start
+	ldr r3, =__iwram_end
+	sub r3, r3, r2
+	bl CopyMem
 
 	@ Copy internal work ram overlay 0 (iwram0 section) from LMA to VMA
-	ldr	r2, =__load_stop_iwram0
-	ldr	r1, =__load_start_iwram0
-	sub	r3, r2, r1		@ Is there any data to copy?
-	beq	CIW0Skip		@ no
-
-	ldr	r2, =__iwram_overlay_start
+	ldr r1, =__load_start_iwram0
+	ldr r2, =__iwram_overlay_start
+	ldr r3, =__load_stop_iwram0
+	sub r3, r3, r1
 	bl CopyMem
-CIW0Skip:
+
 	@ Copy external work ram (ewram section) from LMA to VMA
-	ldr	r1, =__ewram_lma
-	ldr	r2, =__ewram_start
-	ldr	r4, =__ewram_end
-	bl CopyMemChk
+	ldr r1, =__ewram_lma
+	ldr r2, =__ewram_start
+	ldr r3, =__ewram_end
+	sub r3, r3, r2
+	bl CopyMem
 
 	@ Copy external work ram overlay 0 (ewram0 section) from LMA to VMA
-	ldr	r2, =__load_stop_ewram0
-	ldr	r1, =__load_start_ewram0
-	sub	r3, r2, r1		@ Is there any data to copy?
-	beq	CEW0Skip		@ no
-
-	ldr	r2, =__ewram_overlay_start
+	ldr r1, =__load_start_ewram0
+	ldr r2, =__ewram_overlay_start
+	ldr r3, =__load_stop_ewram0
+	sub r3, r3, r1
 	bl CopyMem
-CEW0Skip:
+
+	ldr r0, =start_user
+	bx r0
+
+.align
+.pool
+
+.align
+.arm
+start_user:
 	@ Jump to user code
-	mov r0, #0x12		@ Set to user mode
+	mov r0, #0x10		@ Set to user mode
 	msr cpsr, r0
 
-	mov	r0, #0			@ int argc
-	mov	r1, #0			@ char *argv[]
+	mov r0, #0			@ int argc
+	mov r1, #0			@ char *argv[]
 
-	ldr	r3, =start_vector
-	mov	lr, r3			@ Set start_vector as return address
+	ldr r3, =start_vector
+	mov lr, r3			@ Set start_vector as return address
 
-	ldr	r3, =main
+	ldr r3, =main
 	bx r3
 
 @ -----------------------------------------------------------------------------
 
+.align
+.thumb
 @ Clear memory to 0x00 if length != 0
 @ r0 = Start Address
 @ r1 = Length
 ClearMem:
 	mov r2, #3			@ These commands are used in cases where
-	add	r1, r2			@ the length is not a multiple of 4,
-	bic	r1, r2			@ even though it should be.
+	add r1, r2			@ the length is not a multiple of 4,
+	bic r1, r2			@ even though it should be.
 
-	beq	ClearMX			@ Length is zero so exit
-	mov	r2, #0
-ClrLoop:
+	beq ClearMemExit	@ Length is zero so exit
+	mov r2, #0
+ClearMemLoop:
 	stmia r0!, {r2}
-	sub	r1, #4
-	bne	ClrLoop
-ClearMX:
+	sub r1, #4
+	bne ClearMemLoop
+ClearMemExit:
 	bx lr
 
+.align
+.thumb
 @ Copy memory if length != 0
-@ r1 = Source Address
-@ r2 = Dest Address
-@ r4 = Dest Address + Length
-CopyMemChk:
-	sub	r3, r4, r2		@ Is there any data to copy?
-
-@ Copy memory
 @ r1 = Source Address
 @ r2 = Dest Address
 @ r3 = Length
 CopyMem:
-	mov	r0, #3			@ These commands are used in cases where
-	add	r3, r0			@ the length is not a multiple of 4,
-	bic	r3, r0			@ even though it should be.
+	cmp r3, #0			@ Is there any data to copy?
+	beq CopyMemExit
 
-	beq	CIDExit			@ Length is zero so exit
-CIDLoop:
+	mov r0, #3			@ These commands are used in cases where
+	add r3, r0			@ the length is not a multiple of 4,
+	bic r3, r0			@ even though it should be.
+
+	beq CopyMemExit		@ Length is zero so exit
+CopyMemLoop:
 	ldmia r1!, {r0}
 	stmia r2!, {r0}
-	sub	r3, #4
-	bne	CIDLoop
-CIDExit:
-If_Undefined_Reference__rename_main_or_AgbMain_to_each_other_in_your_C_file:
+	sub r3, #4
+	bne CopyMemLoop
+CopyMemExit:
 	bx lr
 
 .align
