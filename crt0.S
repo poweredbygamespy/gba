@@ -139,6 +139,12 @@ WRAMSetup:
 	sub r2, r2, r0
 	bl  memcpy_align
 
+	@ Set up heap in external WRAM
+	ldr r0, =start_user	@ Jump to start_user routine when we're done
+	mov lr, r0
+	ldr r0, =heap_init
+	bx r0
+
 .align
 .thumb
 .global start_user
