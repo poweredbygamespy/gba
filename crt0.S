@@ -101,38 +101,38 @@ WRAMSetup:
 	bl ClearMem
 
 	@ Copy initialized data (data section) from LMA to VMA
-	ldr r1, =__data_lma
-	ldr r2, =__data_start
-	ldr r3, =__data_end
-	sub r3, r3, r2
+	ldr r0, =__data_lma
+	ldr r1, =__data_start
+	ldr r2, =__data_end
+	sub r2, r2, r1
 	bl CopyMem
 
 	@ Copy internal work ram (iwram section) from LMA to VMA
-	ldr r1, =__iwram_lma
-	ldr r2, =__iwram_start
-	ldr r3, =__iwram_end
-	sub r3, r3, r2
+	ldr r0, =__iwram_lma
+	ldr r1, =__iwram_start
+	ldr r2, =__iwram_end
+	sub r2, r2, r1
 	bl CopyMem
 
 	@ Copy internal work ram overlay 0 (iwram0 section) from LMA to VMA
-	ldr r1, =__load_start_iwram0
-	ldr r2, =__iwram_overlay_start
-	ldr r3, =__load_stop_iwram0
-	sub r3, r3, r1
+	ldr r0, =__load_start_iwram0
+	ldr r1, =__iwram_overlay_start
+	ldr r2, =__load_stop_iwram0
+	sub r2, r2, r0
 	bl CopyMem
 
 	@ Copy external work ram (ewram section) from LMA to VMA
-	ldr r1, =__ewram_lma
-	ldr r2, =__ewram_start
-	ldr r3, =__ewram_end
-	sub r3, r3, r2
+	ldr r0, =__ewram_lma
+	ldr r1, =__ewram_start
+	ldr r2, =__ewram_end
+	sub r2, r2, r1
 	bl CopyMem
 
 	@ Copy external work ram overlay 0 (ewram0 section) from LMA to VMA
-	ldr r1, =__load_start_ewram0
-	ldr r2, =__ewram_overlay_start
-	ldr r3, =__load_stop_ewram0
-	sub r3, r3, r1
+	ldr r0, =__load_start_ewram0
+	ldr r1, =__ewram_overlay_start
+	ldr r2, =__load_stop_ewram0
+	sub r2, r2, r0
 	bl CopyMem
 
 	ldr r0, =start_user
@@ -181,22 +181,19 @@ ClearMemExit:
 .align
 .thumb
 @ Copy memory if length != 0
-@ r1 = Source Address
-@ r2 = Dest Address
-@ r3 = Length
+@ r0 = Source Address
+@ r1 = Dest Address
+@ r2 = Length
 CopyMem:
-	cmp r3, #0			@ Is there any data to copy?
-	beq CopyMemExit
-
-	mov r0, #3			@ These commands are used in cases where
-	add r3, r0			@ the length is not a multiple of 4,
-	bic r3, r0			@ even though it should be.
+	mov r3, #3			@ These commands are used in cases where
+	add r2, r3			@ the length is not a multiple of 4,
+	bic r2, r3			@ even though it should be.
 
 	beq CopyMemExit		@ Length is zero so exit
 CopyMemLoop:
-	ldmia r1!, {r0}
-	stmia r2!, {r0}
-	sub r3, #4
+	ldmia r0!, {r3}
+	stmia r1!, {r3}
+	sub r2, #4
 	bne CopyMemLoop
 CopyMemExit:
 	bx lr

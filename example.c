@@ -1,3 +1,4 @@
+
 int main(void) {
 	*(unsigned int*)0x04000000 = 0x0403;
 
