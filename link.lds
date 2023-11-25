@@ -90,7 +90,7 @@ SECTIONS
 	} = 0xff
 	__iwram_overlay_end = .;
 	__iheap_start = .;
-	__iheap_size = __iheap_end - __iheap_start;
+	/* __iheap_size = __iheap_end - __iheap_start; */
 
 	__ewram_lma = ADDR(.text) + SIZEOF(.text) + SIZEOF(.rodata) + SIZEOF(.gcc_except_table) + SIZEOF(.iwram) + SIZEOF(.data) + SIZEOF(.iwram0) + SIZEOF(.iwram1) + SIZEOF(.iwram2) + SIZEOF(.iwram3) + SIZEOF(.iwram4) + SIZEOF(.iwram5) + SIZEOF(.iwram6) + SIZEOF(.iwram7) + SIZEOF(.iwram8) + SIZEOF(.iwram9);
 	.ewram __ewram_start : AT(__ewram_lma)
@@ -117,7 +117,7 @@ SECTIONS
 	} = 0xff
 	__ewram_overlay_end = .;
 	__eheap_start = .;
-	__eheap_size = __eheap_end - __eheap_start;
+	/* __eheap_size = __eheap_end - __eheap_start; */
 
 	_end = DEFINED (__gba_iwram_heap) ? __iheap_start : __eheap_start;
 	__end__ = _end;

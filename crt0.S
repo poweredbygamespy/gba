@@ -77,7 +77,6 @@ __slave_number:
 .align
 .arm
 .global start_vector
-.type start_vector, %function
 start_vector:
 	mov r0, #0x12			@ Switch to IRQ mode
 	msr cpsr, r0
@@ -96,48 +95,55 @@ WRAMSetup:
 	mov r1, #0x40
 	lsl r1, #12			@ r1 = 0x40000
 	lsl r0, r1, #7		@ r0 = 0x2000000
-	bl  memclr_align
+	lsr r1, #2
+	bl memclr
 
 	@ Clear Internal WRAM to 0x00
 	mov r0, #3
 	lsl r0, #24			@ r0 = 0x3000000
 	ldr r1, =__sp_usr_offset - 16
-	bl  memclr_align
+	lsr r1, #2
+	bl memclr
 
 	@ Copy initialized data (data section) from LMA to VMA
-	ldr r0, =__data_lma
-	ldr r1, =__data_start
+	ldr r0, =__data_start
+	ldr r1, =__data_lma
 	ldr r2, =__data_end
-	sub r2, r2, r1
-	bl  memcpy_align
+	sub r2, r2, r0
+	lsr r2, #2
+	bl memcpy
 
 	@ Copy internal work ram (iwram section) from LMA to VMA
-	ldr r0, =__iwram_lma
-	ldr r1, =__iwram_start
+	ldr r0, =__iwram_start
+	ldr r1, =__iwram_lma
 	ldr r2, =__iwram_end
-	sub r2, r2, r1
-	bl  memcpy_align
+	sub r2, r2, r0
+	lsr r2, #2
+	bl memcpy
 
 	@ Copy internal work ram overlay 0 (iwram0 section) from LMA to VMA
-	ldr r0, =__load_start_iwram0
-	ldr r1, =__iwram_overlay_start
+	ldr r0, =__iwram_overlay_start
+	ldr r1, =__load_start_iwram0
 	ldr r2, =__load_stop_iwram0
-	sub r2, r2, r0
-	bl  memcpy_align
+	sub r2, r2, r1
+	lsr r2, #2
+	bl memcpy
 
 	@ Copy external work ram (ewram section) from LMA to VMA
-	ldr r0, =__ewram_lma
-	ldr r1, =__ewram_start
+	ldr r0, =__ewram_start
+	ldr r1, =__ewram_lma
 	ldr r2, =__ewram_end
-	sub r2, r2, r1
-	bl  memcpy_align
+	sub r2, r2, r0
+	lsr r2, #2
+	bl memcpy
 
 	@ Copy external work ram overlay 0 (ewram0 section) from LMA to VMA
-	ldr r0, =__load_start_ewram0
-	ldr r1, =__ewram_overlay_start
+	ldr r0, =__ewram_overlay_start
+	ldr r1, =__load_start_ewram0
 	ldr r2, =__load_stop_ewram0
-	sub r2, r2, r0
-	bl  memcpy_align
+	sub r2, r2, r1
+	lsr r2, #2
+	bl memcpy
 
 	@ Set up heap in external WRAM
 	ldr r0, =start_user	@ Jump to start_user routine when we're done
@@ -148,7 +154,7 @@ WRAMSetup:
 .align
 .thumb
 .global start_user
-.type start_user, %function
+.thumb_func
 start_user:
 	@ Jump to user code
 	mov r0, #0			@ int argc
@@ -160,57 +166,3 @@ start_user:
 	ldr r3, =start_user	@ Test
 	ldr r3, =main
 	bx r3
-
-@ -----------------------------------------------------------------------------
-
-.align
-.thumb
-.type memclr_align, %function
-memclr_align:
-	mov r2, #3			@ These commands are used in cases where
-	add r1, r2			@ the length is not a multiple of 4,
-	bic r1, r2			@ even though it should be.
-
-@ Clear memory to 0x00 if length != 0
-@ r0 = Start Address
-@ r1 = Length
-.global memclr
-.type memclr, %function
-memclr:
-	cmp r1, #0
-	beq memclrExit		@ Length is zero so exit
-	mov r2, #0
-memclrLoop:
-	stmia r0!, {r2}
-	sub r1, #4
-	bne memclrLoop
-memclrExit:
-	bx lr
-
-.align
-.thumb
-.type memcpy_align, %function
-memcpy_align:
-	mov r3, #3			@ These commands are used in cases where
-	add r2, r3			@ the length is not a multiple of 4,
-	bic r2, r3			@ even though it should be.
-
-@ Copy memory if length != 0
-@ r0 = Source Address
-@ r1 = Dest Address
-@ r2 = Length
-.global memcpy
-.type memcpy, %function
-memcpy:
-	cmp r2, #0
-	beq memcpyExit		@ Length is zero so exit
-memcpyLoop:
-	ldmia r0!, {r3}
-	stmia r1!, {r3}
-	sub r2, #4
-	bne memcpyLoop
-memcpyExit:
-	bx lr
-
-.align
-.pool

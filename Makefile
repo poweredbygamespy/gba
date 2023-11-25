@@ -2,7 +2,7 @@
 BUILD_DIR = build
 NAME = playground
 
-SRC = example.c crt0.S malloc.c
+SRC = example.c crt0.S malloc.c memcpy.c memcpy2.S unscii-8-alt.S
 
 SRC_C = $(filter %.c, $(SRC))
 SRC_S = $(filter %.S, $(SRC))
@@ -64,7 +64,7 @@ $(BUILD_DIR)/$(NAME)_dump.s: $(BUILD_DIR)/$(NAME).elf
 	$(OBJDUMP) $(OBJDUMPFLAGS) $< > $@
 
 # General targets
-.PHONY: gba elf dump debug emu gdb_window gdb lint clean
+.PHONY: gba elf dump debug emu gdb_window gdb lint compile_commands clean
 gba: lint $(BUILD_DIR)/$(NAME).gba dump
 elf: lint $(BUILD_DIR)/$(NAME).elf dump
 dump: $(BUILD_DIR)/$(NAME)_dump.s
@@ -84,6 +84,11 @@ gdb: $(BUILD_DIR)/$(NAME).elf dump
 
 lint:
 	$(LINT) $(LINTFLAGS)
+
+compile_commands:
+	make clean
+	bear -- make dump
+
 
 clean:
 	rm -rf $(BUILD_DIR)

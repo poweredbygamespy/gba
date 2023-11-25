@@ -1,7 +1,6 @@
 #include <malloc.h>
 
 extern unsigned int __eheap_start;
-extern unsigned int __eheap_size;
 extern unsigned int __eheap_end;
 
 #define MALLOC_MIN_CHUNK_SIZE (4 * sizeof(int))
@@ -13,17 +12,17 @@ typedef struct chunk {
 } chunk_t;
 
 __attribute__((section(".ewram")))
-chunk_t *free_list = (chunk_t*)(&__eheap_start - 1);
+static chunk_t *free_list;
 
 static inline unsigned int align(unsigned int n) { return (n + 3) & ~3u; }
 
 static inline unsigned int trunc(unsigned int n) { return n & ~3u; }
 
 static inline chunk_t *get_next(chunk_t *this) {
-	chunk_t *next = (chunk_t*)((unsigned long int)this + (this->size & ~3u));
-	if (next >= (chunk_t*)((unsigned long int)&__eheap_end - sizeof(int)))
+	chunk_t *next = (chunk_t*)((unsigned int)this + (this->size & ~3u));
+	if (next >= (chunk_t*)((unsigned int)&__eheap_end - sizeof(int)))
 		return 0;
-	return (chunk_t*)((unsigned long int)this + (this->size & ~3u));
+	return (chunk_t*)((unsigned int)this + (this->size & ~3u));
 }
 
 static inline chunk_t *get_prev_free(chunk_t *this) {
@@ -38,12 +37,13 @@ static inline chunk_t *get_prev_free(chunk_t *this) {
 
 static inline void write_prev_size(chunk_t *empty_c) {
 	// i resign
-	*((unsigned int*)((unsigned long int)empty_c + (empty_c->size & ~3u)))
-		= empty_c->size & ~3u;
+	*((unsigned int*)((unsigned int)empty_c + trunc(empty_c->size)))
+		= trunc(empty_c->size);
 }
 
-void heap_init() {
-	__eheap_start = (unsigned long int)&__eheap_size + 1;
+void heap_init(void) {
+	free_list = (chunk_t*)(&__eheap_start - 1);
+	free_list->size = (unsigned int)&__eheap_end - (unsigned int)&__eheap_start;
 	write_prev_size(free_list);
 }
 
@@ -63,9 +63,9 @@ void *malloc(unsigned int size) {
 	chunk_t *prev_free;
 	chunk_t *next_free;
 	// not enough space for new empty chunk, fill up all the space
-	if ((fit->size & ~3u) - size < MALLOC_MIN_CHUNK_SIZE) {
-		fit->size = (fit->size & ~3u) + 1; // previous chunk is in use
-										   // or it'd have been coalesced
+	if (trunc(fit->size) - size < MALLOC_MIN_CHUNK_SIZE) {
+		// previous chunk is in use or it'd have been merged with this one
+		fit->size = trunc(fit->size) + 1;
 
 		next = get_next(fit);
 
@@ -74,7 +74,7 @@ void *malloc(unsigned int size) {
 	}
 	// split off new empty chunk
 	else {
-		unsigned int old_size = fit->size & ~3u;
+		unsigned int old_size = trunc(fit->size);
 		fit->size = size + 1;
 
 		next = get_next(fit);
@@ -90,19 +90,21 @@ void *malloc(unsigned int size) {
 		free_list = next_free;
 	else
 		prev_free->data_or_fwd = next_free;
-	next_free->bck = prev_free;
+	if (next_free)
+		next_free->bck = prev_free;
+
 	next->size |= 1;
 
 	return &fit->data_or_fwd;
 }
 
 void free(void *ptr) {
-	chunk_t *chunk = (chunk_t*)((unsigned long int)ptr - 2 * sizeof(int));
+	chunk_t *chunk = (chunk_t*)((unsigned int)ptr - 2 * sizeof(int));
 	chunk_t *prev_free;
 	chunk_t *next_free;
 	// coalesce with previous chunk
 	if (!(chunk->size & 1)) {
-		chunk_t *prev = (chunk_t*)((unsigned long int)chunk - chunk->prev_size);
+		chunk_t *prev = (chunk_t*)((unsigned int)chunk - chunk->prev_size);
 		prev->size += chunk->size;
 		chunk = prev;
 		prev_free = chunk->bck;
@@ -125,7 +127,7 @@ void free(void *ptr) {
 	chunk_t *next = get_next(chunk);
 	// coalesce with next chunk
 	if (next && next_free == next) {
-		chunk->size += next->size & ~3u;
+		chunk->size += trunc(next->size);
 		chunk->data_or_fwd = next->data_or_fwd;
 		if (chunk->data_or_fwd)
 			chunk->data_or_fwd->bck = chunk;
