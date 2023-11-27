@@ -1,6 +1,5 @@
-#include "virtterm.h"
+#include <virtterm.h>
 #include <memory.h>
-#include <defines.h>
 #include <tilemap.h>
 #include <printf.h>
 #include <math.h>
