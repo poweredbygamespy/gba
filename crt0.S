@@ -95,14 +95,12 @@ WRAMSetup:
 	mov r1, #0x40
 	lsl r1, #12			@ r1 = 0x40000
 	lsl r0, r1, #7		@ r0 = 0x2000000
-	lsr r1, #2
 	bl memclr
 
 	@ Clear Internal WRAM to 0x00
 	mov r0, #3
 	lsl r0, #24			@ r0 = 0x3000000
 	ldr r1, =__sp_usr_offset - 16
-	lsr r1, #2
 	bl memclr
 
 	@ Copy initialized data (data section) from LMA to VMA
@@ -110,7 +108,6 @@ WRAMSetup:
 	ldr r1, =__data_lma
 	ldr r2, =__data_end
 	sub r2, r2, r0
-	lsr r2, #2
 	bl memcpy
 
 	@ Copy internal work ram (iwram section) from LMA to VMA
@@ -118,7 +115,6 @@ WRAMSetup:
 	ldr r1, =__iwram_lma
 	ldr r2, =__iwram_end
 	sub r2, r2, r0
-	lsr r2, #2
 	bl memcpy
 
 	@ Copy internal work ram overlay 0 (iwram0 section) from LMA to VMA
@@ -126,7 +122,6 @@ WRAMSetup:
 	ldr r1, =__load_start_iwram0
 	ldr r2, =__load_stop_iwram0
 	sub r2, r2, r1
-	lsr r2, #2
 	bl memcpy
 
 	@ Copy external work ram (ewram section) from LMA to VMA
@@ -134,7 +129,6 @@ WRAMSetup:
 	ldr r1, =__ewram_lma
 	ldr r2, =__ewram_end
 	sub r2, r2, r0
-	lsr r2, #2
 	bl memcpy
 
 	@ Copy external work ram overlay 0 (ewram0 section) from LMA to VMA
@@ -142,7 +136,6 @@ WRAMSetup:
 	ldr r1, =__load_start_ewram0
 	ldr r2, =__load_stop_ewram0
 	sub r2, r2, r1
-	lsr r2, #2
 	bl memcpy
 
 	@ Set up heap in external WRAM

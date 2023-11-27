@@ -2,7 +2,8 @@
 BUILD_DIR = build
 NAME = playground
 
-SRC = example.c crt0.S malloc.c memcpy.c memcpy2.S unscii-8-alt.S
+SRC = example.c crt0.S malloc.c memcpy.c memcpy2.S math.c \
+	  unscii-8-alt.S tilemap.c virtterm.c printf.c \
 
 SRC_C = $(filter %.c, $(SRC))
 SRC_S = $(filter %.S, $(SRC))
@@ -12,7 +13,6 @@ OBJ = $(OBJ_S) $(OBJ_C)
 
 HEADER_FILES = $$(find . -name '*.h')
 DEP = $(OBJ:.o=.d)
--include $(DEP)
 
 LSCRIPT = link.lds
 
@@ -28,16 +28,16 @@ TERMINAL = kitty
 LINT = cppcheck
 
 # Flags
-CFLAGS = \
+CFLAGS = -ggdb3 \
 -Wall -Wextra -Wpedantic -Wconversion -Wfloat-equal -Wconversion -Wlogical-op -Wundef -Wredundant-decls -Wshadow -Wstrict-overflow=2 -Wwrite-strings -Wpointer-arith -Wcast-qual -Wformat=2 -Wformat-truncation -Wmissing-include-dirs -Wcast-align -Wswitch-enum -Wsign-conversion -Wdisabled-optimization -Winline -Winvalid-pch -Wmissing-declarations -Wdouble-promotion -Wshadow -Wtrampolines -Wvector-operation-performance -Wshift-overflow=2 -Wnull-dereference -Wduplicated-cond -Wshift-overflow=2 -Wnull-dereference -Wduplicated-cond -Wcast-align=strict
 EMUFLAGS =
 GDBFLAGS =
 TERMFLAGS = >/dev/null 2>&1
 
-CFLAGS_ALL = -Wall -Wextra -Wpedantic -fomit-frame-pointer -mcpu=arm7tdmi -nostartfiles -nostdlib -ffreestanding -mthumb -mthumb-interwork -ggdb3 $(CFLAGS)
+CFLAGS_ALL = -ffreestanding -mcpu=arm7tdmi -mthumb -mthumb-interwork $(CFLAGS)
 CPPFLAGS = -Iinclude
-LDFLAGS = -T$(LSCRIPT) -nostdlib
-OBJCOPYFLAGS = -Obinary -S --set-section-flags .bss=contents,alloc,load,data
+LDFLAGS = -T$(LSCRIPT) -lm -nostartfiles -fomit-frame-pointer
+OBJCOPYFLAGS =
 OBJDUMPFLAGS = -dfzh
 LINTFLAGS = $(SRC_C) $(HEADER_FILES)
 
@@ -45,20 +45,22 @@ LINTFLAGS = $(SRC_C) $(HEADER_FILES)
 .PHONY: all
 all: elf dump
 
+-include $(DEP)
+
 # Single file targets
 $(OBJ_C):$(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS_ALL) $(CPPFLAGS) -MMD -MP -c $< -o $@
+	$(CC) $(CFLAGS_ALL) -MMD -MP $(CPPFLAGS) -o $@ -c $<
 
 $(OBJ_S):$(BUILD_DIR)/%.o: %.S
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS_ALL) $(CPPFLAGS) -MMD -MP -c $< -o $@
+	$(CC) $(CFLAGS_ALL) -MMD -MP $(CPPFLAGS) -o $@ -c $<
 
 $(BUILD_DIR)/$(NAME).elf: $(OBJ)
-	$(LD) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(BUILD_DIR)/$(NAME).gba: $(BUILD_DIR)/$(NAME).elf
-	$(OBJCOPY) $(OBJCOPYFLAGS) $< $@
+	$(OBJCOPY) $(OBJCOPYFLAGS) -O binary $< $@
 
 $(BUILD_DIR)/$(NAME)_dump.s: $(BUILD_DIR)/$(NAME).elf
 	$(OBJDUMP) $(OBJDUMPFLAGS) $< > $@
@@ -88,7 +90,6 @@ lint:
 compile_commands:
 	make clean
 	bear -- make dump
-
 
 clean:
 	rm -rf $(BUILD_DIR)

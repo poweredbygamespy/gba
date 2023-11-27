@@ -1,4 +1,4 @@
-#include <malloc.h>
+#include <memory.h>
 
 extern unsigned int __eheap_start;
 extern unsigned int __eheap_end;
@@ -42,7 +42,7 @@ static inline void write_prev_size(chunk_t *empty_c) {
 }
 
 void heap_init(void) {
-	free_list = (chunk_t*)(&__eheap_start - 1);
+	free_list = (chunk_t*)((unsigned int)&__eheap_start - 4);
 	free_list->size = (unsigned int)&__eheap_end - (unsigned int)&__eheap_start;
 	write_prev_size(free_list);
 }
@@ -78,9 +78,11 @@ void *malloc(unsigned int size) {
 		fit->size = size + 1;
 
 		next = get_next(fit);
-		next->data_or_fwd = fit->data_or_fwd;
-		next->size = old_size - size;
-		write_prev_size(next);
+		if (next) {
+			next->data_or_fwd = fit->data_or_fwd;
+			next->size = old_size - size;
+			write_prev_size(next);
+		}
 
 		prev_free = fit->bck;
 		next_free = next;
@@ -93,7 +95,8 @@ void *malloc(unsigned int size) {
 	if (next_free)
 		next_free->bck = prev_free;
 
-	next->size |= 1;
+	if (next)
+		next->size |= 1;
 
 	return &fit->data_or_fwd;
 }

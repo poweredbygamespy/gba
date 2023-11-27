@@ -1,6 +1,0 @@
-Diagnostics:
-  Suppress:
-    -Wlanguage-extension-token
-CompileFlags:
-  Remove:
-    -mthumb-interwork
