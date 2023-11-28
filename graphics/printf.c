@@ -1,5 +1,5 @@
-#include <printf.h>
-#include <virtterm.h>
+#include <graphics/printf.h>
+#include <graphics/virtterm.h>
 #include <math.h>
 
 //TODO move these two functions somewhere else
@@ -16,13 +16,12 @@ static unsigned int pow(unsigned int b, int p) { //basis, potenz
 
 static int num_digits(unsigned int num, unsigned int base) {
 	int digits = 1;
-	unsigned int power = base;
+	unsigned int power = 1;
 	unsigned int max = udiv(UINT32_MAX, base) + 1;
-	while (power < num) {
-		if (power > max)
-			return ++digits;
+	while ((power *= base) <= num) {
 		digits++;
-		power *= base;
+		if (power > max)
+			return digits;
 	}
 
 	return digits;

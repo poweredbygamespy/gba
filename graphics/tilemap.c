@@ -1,4 +1,4 @@
-#include <tilemap.h>
+#include <graphics/tilemap.h>
 #include <memory.h>
 
 #define MEM_IO (0x04000000)

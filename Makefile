@@ -3,7 +3,7 @@ BUILD_DIR = build
 NAME = playground
 
 SRC = example.c crt0.S malloc.c memcpy.c memcpy2.S math.c \
-	  unscii-8-alt.S tilemap.c virtterm.c printf.c \
+	  unscii-8-alt.S graphics/tilemap.c graphics/virtterm.c graphics/printf.c \
 
 SRC_C = $(filter %.c, $(SRC))
 SRC_S = $(filter %.S, $(SRC))

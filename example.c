@@ -1,7 +1,7 @@
-#include <virtterm.h>
+#include <graphics/virtterm.h>
 #include <memory.h>
-#include <tilemap.h>
-#include <printf.h>
+#include <graphics/tilemap.h>
+#include <graphics/printf.h>
 #include <math.h>
 
 extern const tile_t unscii_8_alt[];
@@ -24,7 +24,9 @@ int main(void) {
 	load_palette(unscii_8_alt_pal, 0);
 
 	void *addr = (void*)0x0600000A;
-	printf("%010pslash n\n", addr);
+	printf("%010xslash n\n", addr);
+	int test = 10;
+	printf("%i\n", INT32_MIN);
 	while (1) {
 		printf("1234");
 		for (int i = 0; i < 120000; ++i) {}
