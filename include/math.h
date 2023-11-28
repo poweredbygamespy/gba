@@ -19,12 +19,15 @@ typedef unsigned char uint8;
 #define UINT16_MAX (65535)
 #define UINT32_MAX (4294967295U)
 
-
-int div(int, int);
-int mod(int, int);
-void divmod(int, int, int*, int*);
+extern int div(int, int);
+extern int mod(int, int);
+extern void divmod(int, int, int*, int*);
 uint udiv(uint, uint);
 uint umod(uint, uint);
 void udivmod(uint, uint, uint*, uint*);
+extern void obj_affine_set(void*, void*, int, int);
+extern void bg_affine_set(void*, void*, int);
+uint16 ang(int16 deg);
+int16 sin(int16 deg);
 
 #endif

@@ -6,7 +6,9 @@
 
 #define palette_memory ((palette_bank_t*)MEM_PAL)
 #define tileset_memory ((tileset_t*)MEM_VRAM)
+#define dtileset_memory ((dtileset_t*)MEM_VRAM)
 #define tilemap_memory ((tilemap_t*)MEM_VRAM)
+#define affine_tilemap_memory ((affine_tilemap_t*)MEM_VRAM)
 
 #define REG_DISPCNT (*(volatile hword*)MEM_IO)
 #define DCNT_MODE0 (0)
@@ -98,9 +100,9 @@
 #define BG_AFF_128x128 (3<<14)
 
 void setup(void) {
-	REG_DISPCNT = DCNT_BG0 | DCNT_BG1 | DCNT_MODE0;
+	REG_DISPCNT = DCNT_BG0 | DCNT_BG2 | DCNT_MODE1;
 	REG_BG0CNT = BG_REG_32x32 | BG_SBB31 | BG_CBB0 | BG_PRIO1;
-	REG_BG1CNT = BG_REG_32x32 | BG_SBB30 | BG_CBB0;
+	REG_BG2CNT = BG_AFF_16x16 | BG_CM_4BPP | BG_SBB30 | BG_CBB1;
 }
 
 void load_tileset(const tile_t tileset[], unsigned int size, int cbb) {
@@ -125,6 +127,13 @@ void load_tilemap(const tilemap_t tilemap, int sbb) {
 
 void update_tile(int sbb, int offset, tilemap_entry_t te) {
 	tilemap_memory[sbb][offset] = te;
+}
+
+void update_tile_affine(int sbb, int offset, affine_tilemap_entry_t te) {
+	byte *address = &affine_tilemap_memory[sbb][offset];
+	hword *align = (hword*)((unsigned int)address & ~1u);
+	hword mask = (hword)(0xff<<(((unsigned int)address & 1u)) * 8);
+	*align = (*align & ~mask) | ((te<<8 | te) & mask);
 }
 
 tilemap_entry_t flip_tilemap_entry_h(tilemap_entry_t te) {

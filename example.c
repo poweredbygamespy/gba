@@ -7,6 +7,7 @@
 extern const tile_t unscii_8_alt[];
 extern const palette_t unscii_8_alt_pal;
 extern const palette_t test_pal;
+extern const void test_affine_bg;
 extern const char ones[];
 
 extern void memcpyAligned(void *dst, const void *src, unsigned int len);
@@ -21,30 +22,41 @@ int main(void) {
 		//memcpyAligned(addr, &unscii_8_alt, 0x80 * sizeof(tile_t));
 	}*/
 	load_tileset(unscii_8_alt, 0x80, 0);
+	load_tileset(&test_affine_bg, 0x4, 1);
 
 	load_palette(unscii_8_alt_pal, 1);
 	load_palette(test_pal, 0);
 
-	update_tile(30, 10, set_tilemap_entry_palette(0x41, 1));
-	update_tile(30, 42, set_tilemap_entry_palette(0x41, 1));
-	update_tile(30, 72, set_tilemap_entry_palette(0x41, 1));
-	update_tile(30, 73, set_tilemap_entry_palette(0x41, 1));
-	update_tile(30, 74, set_tilemap_entry_palette(0x41, 1));
-	update_tile(30, 75, set_tilemap_entry_palette(0x41, 1));
-	update_tile(30, 76, set_tilemap_entry_palette(0x41, 1));
-	update_tile(30, 106, set_tilemap_entry_palette(0x41, 1));
-	update_tile(30, 138, set_tilemap_entry_palette(0x41, 1));
+	update_tile_affine(30, 2, 1);
+	update_tile_affine(30, 18, 1);
+	update_tile_affine(30, 32, 1);
+	update_tile_affine(30, 33, 1);
+	update_tile_affine(30, 34, 1);
+	update_tile_affine(30, 35, 1);
+	update_tile_affine(30, 36, 1);
+	update_tile_affine(30, 50, 1);
+	update_tile_affine(30, 66, 1);
 
 	void *addr = (void*)0x0600000A;
+	int frame_counter = 0;
 	printf("%010xslash n\n", addr);
-	int test = 10;
 	printf("%i\n", INT32_MIN);
-	int16 scroll = 0;
+	int16 angle = 0;
+	struct __attribute__((packed, aligned(4))) {
+		int32 x; int32 y;
+		int16 dx; int16 dy;
+		int16 sx; int16 sy; uint16 rot;
+	} a = { 20*256, 20*256, 20, 20, 256, 256, ang(angle) };
+	
 	while (1) {
-		printf("1234");
-		(*((int16*)(0x04000014))) = scroll++;
-		(*((int16*)(0x04000016))) = -scroll;
-		for (int i = 0; i < 120000; ++i) {}
+		while(*((hword*)0x04000006) < 160);
+		angle += 1;
+		a.rot = ang(angle);
+		bg_affine_set(&a, (void*)0x04000020, 1);
+		frame_counter++;
+		if (frame_counter % 10 == 0)
+			printf("1234");
+		while(*((hword*)0x04000006) >= 160);
 	}
 	
 	for (;;);

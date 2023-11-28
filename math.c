@@ -1,40 +1,5 @@
 #include <math.h>
 
-int div(int a, int b) {
-	int res;
-	asm("mov r0, %1\n\t"
-		"mov r1, %2\n\t"
-		"swi #0x6\n\t"
-		"mov %0, r0"
-		: "=r"(res)
-		: "r"(a), "r"(b)
-		: "r0", "r1");
-	return res;
-}
-
-int mod(int a, int b) {
-	int res;
-	asm("mov r0, %1\n\t"
-		"mov r1, %2\n\t"
-		"swi #0x6\n\t"
-		"mov %0, r1"
-		: "=r"(res)
-		: "r"(a), "r"(b)
-		: "r0", "r1");
-	return res;
-}
-
-void divmod(int a, int b, int *div, int *mod) {
-	asm("mov r0, %2\n\t"
-		"mov r1, %3\n\t"
-		"swi #0x6\n\t"
-		"mov %0, r0\n\t"
-		"mov %1, r1"
-		: "=r"(*div), "=r"(*mod)
-		: "r"(a), "r"(b)
-		: "r0", "r1");
-}
-
 uint udiv(uint a, uint b) {
 	//uint dummy, res;
 	//udivmod(a, b, &res, &dummy);
@@ -58,4 +23,19 @@ void udivmod(uint a, uint b, uint *div, uint *mod) {
 			*div |= 1u<<i;
 		}
 	}
+}
+
+int16 sin(int16 deg) {
+	struct __attribute__((packed, aligned(4))) {
+		int16 sx; int16 sy; uint16 rot;
+	} a = { 10000, 10000, ang(deg) };
+	struct __attribute__((packed, aligned(4))) {
+		int16 a11; int16 a12; int16 a21; int16 a22;
+	} b = { 0, 0, 0, 0 };
+	obj_affine_set(&a, &b, 1, 2);
+	return b.a21;
+}
+
+uint16 ang(int16 deg) {
+	return (uint16)(0x10000 * deg / 360);
 }

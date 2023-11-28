@@ -2,7 +2,7 @@
 BUILD_DIR = build
 NAME = playground
 
-SRC = example.c crt0.S malloc.c memcpy.c memcpy2.S math.c \
+SRC = example.c crt0.S malloc.c memcpy.c memcpy2.S math_swi.S math.c \
 	  unscii-8-alt.S graphics/vmem.c graphics/virtterm.c graphics/printf.c \
 	  test.S
 
