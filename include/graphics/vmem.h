@@ -1,20 +1,25 @@
 #ifndef TILEMAP_H
 #define TILEMAP_H
 
+#include <memory.h>
+
 typedef struct palette {
-	unsigned short int colors[16];
+	hword colors[16];
 } palette_t, palette_bank_t[16];
 
 typedef struct tile {
-	unsigned int data[8];
+	word data[8];
 } tile_t, tileset_t[512];
 
-typedef unsigned short tilemap_entry_t, tilemap_t[1024];
+typedef hword tilemap_entry_t, tilemap_t[1024];
 
 void setup(void);
 void load_tileset(const tile_t[], unsigned int, int);
 void load_tilemap(const tilemap_t, int);
 void update_tile(int, int, tilemap_entry_t);
+tilemap_entry_t flip_tilemap_entry_h(tilemap_entry_t);
+tilemap_entry_t flip_tilemap_entry_v(tilemap_entry_t);
+tilemap_entry_t set_tilemap_entry_palette(tilemap_entry_t, byte);
 void shift_up(int, unsigned int);
 void load_palette(palette_t, int);
 

@@ -1,5 +1,4 @@
-#include <graphics/tilemap.h>
-#include <memory.h>
+#include <graphics/vmem.h>
 
 #define MEM_IO (0x04000000)
 #define MEM_PAL (0x05000000)
@@ -9,24 +8,43 @@
 #define tileset_memory ((tileset_t*)MEM_VRAM)
 #define tilemap_memory ((tilemap_t*)MEM_VRAM)
 
-#define REG_DISPCNT (*(volatile unsigned int*)MEM_IO)
+#define REG_DISPCNT (*(volatile hword*)MEM_IO)
 #define DCNT_MODE0 (0)
 #define DCNT_MODE1 (1)
 #define DCNT_MODE2 (2)
 #define DCNT_MODE3 (3)
 #define DCNT_MODE4 (4)
 #define DCNT_MODE5 (5)
+#define DCNT_GB (1<<3)
+#define DCNT_PAGE (1<<4)
+#define DCNT_OAM_HBL (1<<5)
 #define DCNT_OBJ_2D (0<<6)
 #define DCNT_OBJ_1D (1<<6)
-#define DCNT_BG0 (0x0100)
-#define DCNT_BG1 (0x0200)
-#define DCNT_BG2 (0x0400)
-#define DCNT_BG3 (0x0800)
-#define DCNT_OBJ (0x1000)
+#define DCNT_BLANK (1<<7)
+#define DCNT_BG0 (1<<8)
+#define DCNT_BG1 (1<<9)
+#define DCNT_BG2 (1<<10)
+#define DCNT_BG3 (1<<11)
+#define DCNT_OBJ (1<<12)
+#define DCNT_WIN0 (1<<13)
+#define DCNT_WIN1 (1<<14)
+#define DCNT_WINOBJ (1<<15)
 
-#define REG_VCOUNT (*(volatile unsigned int*)(MEM_IO + 0x6))
+#define REG_DISPSTAT (*(volatile hword*)(MEM_IO + 0x4))
+#define DSTAT_IN_VBL (1<<0)
+#define DSTAT_IN_HBL (1<<1)
+#define DSTAT_IN_VCT (1<<2)
+#define DSTAT_VBL_IRQ (1<<3)
+#define DSTAT_HBL_IRQ (1<<4)
+#define DSTAT_VCT_IRQ (1<<5)
+#define DSTAT_VCT_TRG_VAL (0xff<<8)
 
-#define REG_BG0CNT (*(volatile unsigned int*)(MEM_IO + 0x8))
+#define REG_VCOUNT (*(volatile hword*)(MEM_IO + 0x6))
+
+#define REG_BG0CNT (*(volatile hword*)(MEM_IO + 0x8))
+#define REG_BG1CNT (*(volatile hword*)(MEM_IO + 0xa))
+#define REG_BG2CNT (*(volatile hword*)(MEM_IO + 0xc))
+#define REG_BG3CNT (*(volatile hword*)(MEM_IO + 0xe))
 #define BG_PRIO0 (0)
 #define BG_PRIO1 (1)
 #define BG_PRIO2 (2)
@@ -74,10 +92,15 @@
 #define BG_REG_64x32 (1<<14)
 #define BG_REG_32x64 (2<<14)
 #define BG_REG_64x64 (3<<14)
+#define BG_AFF_16x16 (0<<14)
+#define BG_AFF_32x32 (1<<14)
+#define BG_AFF_64x64 (2<<14)
+#define BG_AFF_128x128 (3<<14)
 
 void setup(void) {
-	REG_DISPCNT = DCNT_BG0 | DCNT_MODE0;
-	REG_BG0CNT = BG_REG_32x32 | BG_CM_4BPP | BG_SBB31 | BG_CBB0;
+	REG_DISPCNT = DCNT_BG0 | DCNT_BG1 | DCNT_MODE0;
+	REG_BG0CNT = BG_REG_32x32 | BG_SBB31 | BG_CBB0 | BG_PRIO1;
+	REG_BG1CNT = BG_REG_32x32 | BG_SBB30 | BG_CBB0;
 }
 
 void load_tileset(const tile_t tileset[], unsigned int size, int cbb) {
@@ -104,9 +127,21 @@ void update_tile(int sbb, int offset, tilemap_entry_t te) {
 	tilemap_memory[sbb][offset] = te;
 }
 
+tilemap_entry_t flip_tilemap_entry_h(tilemap_entry_t te) {
+	return te ^ (1<<10);
+}
+
+tilemap_entry_t flip_tilemap_entry_v(tilemap_entry_t te) {
+	return te ^ (1<<11);
+}
+
+tilemap_entry_t set_tilemap_entry_palette(tilemap_entry_t te, byte pal) {
+	return (hword)((te & 0xfff) | (pal<<12));
+}
+
 void shift_up(int sbb, unsigned int lines) {
 	memcpy(&tilemap_memory[sbb], &tilemap_memory[sbb][32 * lines], (32 - lines) * 32 * sizeof(tilemap_entry_t));
-	memclr(&tilemap_memory[sbb][32 * (32 - lines)], lines * 32 * (int)sizeof(tilemap_entry_t));
+	memclr(&tilemap_memory[sbb][(32 - lines) * 32], lines * 32 * (int)sizeof(tilemap_entry_t));
 }
 
 void load_palette(palette_t palette, int paletteid) {

@@ -1,5 +1,5 @@
 #include <graphics/virtterm.h>
-#include <graphics/tilemap.h>
+#include <graphics/vmem.h>
 
 static int tilemap = 31;
 

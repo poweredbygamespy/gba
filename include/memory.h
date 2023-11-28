@@ -3,8 +3,12 @@
 
 #define NULL 0
 
+typedef unsigned int word;
+typedef unsigned short hword;
+typedef unsigned char byte;
+
 void memcpy(void *dst, const void *src, unsigned int len);
-void memset(void *dst, const int byte, unsigned int len);
+void memset(void *dst, const int fill_byte, unsigned int len);
 void memclr(void *dst, unsigned int len);
 
 void heap_init(void);

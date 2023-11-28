@@ -36,15 +36,15 @@ void divmod(int a, int b, int *div, int *mod) {
 }
 
 uint udiv(uint a, uint b) {
-	uint dummy, res;
-	udivmod(a, b, &res, &dummy);
-	return res;
+	//uint dummy, res;
+	//udivmod(a, b, &res, &dummy);
+	return a / b;
 }
 
 uint umod(uint a, uint b) {
-	uint dummy, res;
-	udivmod(a, b, &dummy, &res);
-	return res;
+	//uint dummy, res;
+	//udivmod(a, b, &dummy, &res);
+	return a % b;
 }
 
 void udivmod(uint a, uint b, uint *div, uint *mod) {
