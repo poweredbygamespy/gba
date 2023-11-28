@@ -46,11 +46,11 @@ int main(void) {
 		int32 x; int32 y;
 		int16 dx; int16 dy;
 		int16 sx; int16 sy; uint16 rot;
-	} a = { 20*256, 20*256, 20, 20, 256, 256, ang(angle) };
+	} a = { 20*256, 20*256, 20*2, 20*2, 256/2, 256/2, ang(angle) };
 	
 	while (1) {
 		while(*((hword*)0x04000006) < 160);
-		angle += 1;
+		angle -= 1;
 		a.rot = ang(angle);
 		bg_affine_set(&a, (void*)0x04000020, 1);
 		frame_counter++;
