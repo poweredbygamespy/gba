@@ -1,10 +1,8 @@
-#include <graphics/vmem.h>
+#include <graphics/tiledbg.h>
 
 #define MEM_IO (0x04000000)
-#define MEM_PAL (0x05000000)
 #define MEM_VRAM (0x06000000)
 
-#define palette_memory ((palette_bank_t*)MEM_PAL)
 #define tileset_memory ((tileset_t*)MEM_VRAM)
 #define dtileset_memory ((dtileset_t*)MEM_VRAM)
 #define tilemap_memory ((tilemap_t*)MEM_VRAM)
@@ -105,16 +103,6 @@ void setup(void) {
 	REG_BG2CNT = BG_AFF_16x16 | BG_CM_4BPP | BG_SBB30 | BG_CBB1;
 }
 
-void load_tileset(const tile_t tileset[], unsigned int size, int cbb) {
-	asm("mov r0, %0\n\t"
-		"mov r1, %1\n\t"
-		"mov r2, %2\n\t"
-		"swi #0x0c"
-		:
-		: "r" (tileset), "r" (&tileset_memory[cbb]), "r" (size * sizeof(tile_t) / 4)
-		: "r0", "r1", "r2");
-}
-
 void load_tilemap(const tilemap_t tilemap, int sbb) {
 	asm("mov r0, %0\n\t"
 		"mov r1, %1\n\t"
@@ -149,17 +137,9 @@ tilemap_entry_t set_tilemap_entry_palette(tilemap_entry_t te, byte pal) {
 }
 
 void shift_up(int sbb, unsigned int lines) {
-	memcpy(&tilemap_memory[sbb], &tilemap_memory[sbb][32 * lines], (32 - lines) * 32 * sizeof(tilemap_entry_t));
-	memclr(&tilemap_memory[sbb][(32 - lines) * 32], lines * 32 * (int)sizeof(tilemap_entry_t));
-}
-
-void load_palette(palette_t palette, int paletteid) {
-	asm("mov r0, %0\n\t"
-		"mov r1, %1\n\t"
-		"mov r2, %2\n\t"
-		"swi #0x0c"
-		:
-		: "r" (&palette), "r" (&palette_memory[0][paletteid]), "r" (sizeof(palette_t) / 4)
-		: "r0", "r1", "r2");
+	memcpy(&tilemap_memory[sbb], &tilemap_memory[sbb][32 * lines],
+			(32 - lines) * 32 * sizeof(tilemap_entry_t));
+	memclr(&tilemap_memory[sbb][(32 - lines) * 32],
+			lines * 32 * (int)sizeof(tilemap_entry_t));
 }
 

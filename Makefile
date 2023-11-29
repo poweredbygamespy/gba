@@ -3,8 +3,8 @@ BUILD_DIR = build
 NAME = playground
 
 SRC = example.c crt0.S malloc.c memcpy.c memcpy2.S math_swi.S math.c \
-	  unscii-8-alt.S graphics/vmem.c graphics/virtterm.c graphics/printf.c \
-	  test.S
+	  unscii-8-alt.S test.S \
+	  $(wildcard graphics/*.c)
 
 SRC_C = $(filter %.c, $(SRC))
 SRC_S = $(filter %.S, $(SRC))
@@ -13,7 +13,7 @@ OBJ_S = $(addprefix $(BUILD_DIR)/,$(SRC_S:%.S=%.o))
 OBJ = $(OBJ_S) $(OBJ_C)
 
 HEADER_FILES = $$(find . -name '*.h')
-DEP = $(OBJ:.o=.d)
+DEP = $(OBJ:%.o=%.d)
 
 LSCRIPT = link.lds
 
