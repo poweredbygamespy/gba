@@ -99,17 +99,19 @@
 
 void setup(void) {
 	REG_DISPCNT = DCNT_BG0 | DCNT_BG2 | DCNT_MODE1;
-	REG_BG0CNT = BG_REG_32x32 | BG_SBB31 | BG_CBB0 | BG_PRIO1;
+	REG_BG0CNT = BG_REG_32x32 | BG_SBB31 | BG_CBB2 | BG_PRIO1;
 	REG_BG2CNT = BG_AFF_16x16 | BG_CM_4BPP | BG_SBB30 | BG_CBB1;
 }
 
-void load_tilemap(const tilemap_t tilemap, int sbb) {
+void load_tilemap(const tilemap_entry_t tilemap[], unsigned int size, int sbb) {
 	asm("mov r0, %0\n\t"
 		"mov r1, %1\n\t"
 		"mov r2, %2\n\t"
 		"swi #0x0c"
 		:
-		: "r" (&tilemap), "r" (&tilemap_memory[sbb]), "r" (sizeof(tilemap_t) / 4)
+		: "r" (tilemap),
+		  "r" (&tilemap_memory[sbb]),
+		  "r" (size * sizeof(tilemap_entry_t) / 4)
 		: "r0", "r1", "r2");
 }
 

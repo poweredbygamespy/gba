@@ -3,7 +3,7 @@ BUILD_DIR = build
 NAME = playground
 
 SRC = example.c crt0.S malloc.c memcpy.c memcpy2.S math_swi.S math.c \
-	  unscii-8-alt.S test.S \
+	  unscii-8-alt.S test.S wall.S \
 	  $(wildcard graphics/*.c)
 
 SRC_C = $(filter %.c, $(SRC))
